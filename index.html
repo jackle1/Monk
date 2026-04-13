@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<title>Monk</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial;
+  background: transparent;
+  color: white;
+  -webkit-app-region: drag;
+  overflow: hidden;
+}
+
+.widget {
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;
+  width: 360px;
+  border-radius: 16px;
+  background: rgba(25,25,25,0.75);
+  backdrop-filter: blur(12px);
+  box-sizing: border-box;
+}
+
+img {
+  width: 58px;
+  height: 58px;
+  border-radius: 10px;
+  margin-right: 10px;
+  object-fit: cover;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+}
+
+#songTitle {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#songArtist {
+  font-size: 11px;
+  color: rgba(255,255,255,0.65);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.controls {
+  display: flex;
+  gap: 6px;
+  -webkit-app-region: no-drag;
+}
+
+button {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255,255,255,0.1);
+  color: white;
+}
+
+button:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+#toggleBtn {
+  width: 36px;
+  height: 36px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="widget">
+  <img id="albumArt" />
+
+  <div class="content">
+    <div id="songTitle">Not connected</div>
+    <div id="songArtist"></div>
+  </div>
+
+  <div class="controls">
+    <button onclick="prev()">⏮</button>
+    <button id="toggleBtn" onclick="toggle()">▶</button>
+    <button onclick="next()">⏭</button>
+  </div>
+</div>
+
+<script src="renderer.js"></script>
+</body>
+</html>
