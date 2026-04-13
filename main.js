@@ -31,7 +31,8 @@ function createWindow() {
 
   mainWindow.loadFile('index.html');
 
-  // keep inside screen bounds
+  mainWindow.webContents.openDevTools({ mode: 'detach' });
+
   const { screen } = require('electron');
 
   mainWindow.on('move', () => {
@@ -55,22 +56,22 @@ function createWindow() {
     mainWindow.setPosition(x, y);
   });
 
-  // 🔥 IMPORTANT FIXES
   mainWindow.on('blur', forceOnTop);
   mainWindow.on('focus', forceOnTop);
   mainWindow.on('show', forceOnTop);
   mainWindow.on('restore', forceOnTop);
 }
 
-// IPC from renderer (button clicks)
 ipcMain.on('keep-on-top', () => {
   forceOnTop();
 });
 
-// Spotify auth server
+/* ---------------- AUTH SERVER ---------------- */
+
 function startAuthServer() {
   const server = express();
 
+  // ✅ LOGIN CALLBACK
   server.get('/callback', async (req, res) => {
     const code = req.query.code;
 
@@ -91,23 +92,71 @@ function startAuthServer() {
       });
 
       const data = await tokenRes.json();
+
       accessToken = data.access_token;
+      const refreshToken = data.refresh_token;
 
-      mainWindow.webContents.send('token', accessToken);
+      console.log("ACCESS:", accessToken);
+      console.log("REFRESH:", refreshToken);
 
-      mainWindow.webContents.on('did-finish-load', () => {
-        mainWindow.webContents.send('token', accessToken);
+      // ✅ SEND BOTH TOKENS
+      mainWindow.webContents.send('token', {
+        accessToken,
+        refreshToken
       });
 
-      res.send("Login successful!");
+      mainWindow.webContents.on('did-finish-load', () => {
+        mainWindow.webContents.send('token', {
+          accessToken,
+          refreshToken
+        });
+      });
+
+      res.send("Login successful! You can close this tab.");
+
     } catch (err) {
       console.error(err);
       res.send("Auth failed");
     }
   });
 
-  server.listen(8888);
+  // ✅ REFRESH ENDPOINT (NEW)
+  server.post('/refresh', express.json(), async (req, res) => {
+    const { refreshToken } = req.body;
+
+    try {
+      const tokenRes = await fetch('https://accounts.spotify.com/api/token', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Basic ' + Buffer.from(
+            CLIENT_ID + ':' + CLIENT_SECRET
+          ).toString('base64'),
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: new URLSearchParams({
+          grant_type: 'refresh_token',
+          refresh_token: refreshToken
+        })
+      });
+
+      const data = await tokenRes.json();
+
+      console.log("REFRESHED:", data.access_token);
+
+      res.json(data);
+
+    } catch (err) {
+      console.error(err);
+      res.status(500).send("Refresh failed");
+    }
+  });
+
+  server.listen(8888, () => {
+    console.log("Auth server running on 8888");
+  });
 }
+
+/* ---------------- START ---------------- */
 
 app.whenReady().then(() => {
   createWindow();
